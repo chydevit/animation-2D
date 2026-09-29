@@ -1,0 +1,9 @@
+# generated films and intermediates never go into the repo
+episodes/
+*.mp4
+*.wav
+*.log
+__pycache__/
+*.pyc
+.DS_Store
+# model weights live in ~/.cache/huggingface

@@ -1,0 +1,5 @@
+# VoxCPM2 Khmer/English voices + Khmer text cards  (~/voxcpm-env, Python 3.12)
+voxcpm>=2.0.3
+soundfile>=0.12
+librosa>=0.10
+Pillow>=10      # must be built with libraqm for Khmer shaping: python -c "from PIL import features; print(features.check('raqm'))"

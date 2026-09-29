@@ -1,0 +1,5 @@
+# drawing, rendering, audio synthesis and mixing  (~/anim-env, Python 3.12)
+skia-python>=87.5
+numpy>=1.26
+scipy>=1.11
+soundfile>=0.12
