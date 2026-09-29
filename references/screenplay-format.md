@@ -59,3 +59,19 @@ If there is no reuse file, list a `narrator` in `VOICES`/`REF_TEXT`/`PROFILE` so
 Rig specs live in `engine/chars.py → CAST` (height, head size, skin, hair style, shirt style/colours, pants/skirt,
 extras such as `krama_neck`, `glasses`, `cap_police`, `stethoscope` …). Add new characters there; draw a sheet with
 `sheet.py <id>` and review it before rendering scenes.
+
+## Optional story extensions (no engine edits needed)
+A story folder may also contain:
+- `story_chars.py` — extra locked characters and poses for this film. Loaded by `engine/chars.py` (via `STORY_DIR`);
+  it does `import chars` and updates `chars.CAST`, `chars.POSES`, `chars.BASE_POSES`, `chars.SEATED`.
+  Rig parts available for any spec: `shirt_style="tunic"`, `pants_style="cropped"`, hair `boy_spiky`, `bun_top`,
+  `topknot_white`, facial `beard_long`, extras `scarf_red`, `sash_waist`, `shoulder_bag`, `flower_hair`,
+  `robe_over`, `staff` (colours via spec keys `sash`, `bag`, `robe`). Set `st["wind"]` (0–1) to flutter scarf/sash.
+- `story_art.py` — film-specific pictures and music, imported by `render.py` and `mix.py`:
+  - `INSERTS = {name: fn(R, c, t, shot, u)}` — drawn for `cam="insert:<name>"` before the engine's own inserts
+    (`R` is the render module: `R.simple_state`, `R.RIGS`, `R.rain`, `R.card`, `R.black`, …).
+  - `AMB = {insert_name: ambience_kind or None}` — ambience per insert.
+  - `score(tl, sr) -> float32 (N, 2)` — one continuous music track replacing the per-scene cues;
+    `MUSIC_DB` (default -14) and `DUCK` (default 0.72) set its level and how far it dips under dialogue.
+- In `project.py`, `CHAPTER_CARDS = False` hides the chapter cards.
+See `episodes/keep_growing_never_stop/story/` in the workspace for a film built this way (narrator-only, all inserts).

@@ -12,6 +12,10 @@ import config
 import sets as S
 from plan import build, FINAL, FPS, FADE
 from script_data import voice_of
+try:                      # optional story-specific cut-aways (story/story_art.py: INSERTS = {name: fn(R, c, t, shot, u)})
+    import story_art as STORY_ART
+except ImportError:
+    STORY_ART = None
 
 W, H = 1920, 1080
 SHOTS_DIR = os.path.join(FINAL, "visuals", "shots")
@@ -688,6 +692,8 @@ def city_passenger(g, x, d, t):
 def draw_insert(c, name, t, shot, u):
     """cut-away shots. Returns the tod used, for grading."""
     sh = shot
+    if STORY_ART is not None and name in getattr(STORY_ART, "INSERTS", {}):
+        return STORY_ART.INSERTS[name](sys.modules[__name__], c, t, shot, u)
     if name == "village_sunrise":
         ins_scene(c, t, u, "village", "dawn", (-700, -380, 2100), (0, -330, 1700),
                   [("sam", -60, 0.8, "hoe", 1, {})], sh,
@@ -1069,13 +1075,39 @@ def draw_insert(c, name, t, shot, u):
 def scene_of(shot):
     return next(s for s in TL()["scenes"] if s["n"] == shot["scene"])
 
+DISSOLVE = float(getattr(config.P, "DISSOLVE", 0.0) or 0.0)   # cross-dissolve between scenes (s), 0 = dip to black
+
 def draw_frame(c, t, shot=None):
+    """one frame; with project.DISSOLVE > 0 the scenes cross-dissolve instead of dipping to black."""
+    tl = TL()
+    if shot is None:
+        shot = next(s for s in tl["shots"] if s["t0"] <= t < s["t1"] or s is tl["shots"][-1])
+    if DISSOLVE <= 0:
+        return _draw_core(c, t, shot)
+    scenes = tl["scenes"]
+    sc = scene_of(shot)
+    k = scenes.index(sc)
+    half = DISSOLVE / 2
+    other, a = None, 0.0
+    if k > 0 and t < sc["t0"] + half and shot is sc["shots"][0]:
+        other = scenes[k - 1]["shots"][-1]
+        a = 0.5 - (t - sc["t0"]) / DISSOLVE          # weight of the previous scene
+    elif k < len(scenes) - 1 and t >= sc["t1"] - half and shot is sc["shots"][-1]:
+        other = scenes[k + 1]["shots"][0]
+        a = 0.5 - (sc["t1"] - t) / DISSOLVE          # weight of the next scene
+    _draw_core(c, t, shot)
+    if other is not None and a > 0.001:
+        c.saveLayer(None, skia.Paint(Alphaf=ease(min(1.0, a))))
+        _draw_core(c, t, other)
+        c.restore()
+
+def _draw_core(c, t, shot):
     tl = TL()
     stage = tl["stage"]
     if shot is None:
         shot = next(s for s in tl["shots"] if s["t0"] <= t < s["t1"] or s is tl["shots"][-1])
     scene = scene_of(shot)
-    u = (t - shot["t0"]) / max(shot["dur"], 1e-6)
+    u = min(1.0, max(0.0, (t - shot["t0"]) / max(shot["dur"], 1e-6)))
     c.clear(rgb("#000000"))
     cam_s = shot.get("cam") or "wide"
     mood = {}
@@ -1137,7 +1169,8 @@ def draw_frame(c, t, shot=None):
             rain(c, t, 0.35)
         grade(c, 1.0)
     # chapter card (first 4 s of each chapter's first scene)
-    first_of_ch = scene["n"] == min(s["n"] for s in tl["scenes"] if s["ch"] == scene["ch"])
+    first_of_ch = scene["n"] == min(s["n"] for s in tl["scenes"] if s["ch"] == scene["ch"]) and \
+        getattr(config.P, "CHAPTER_CARDS", True)
     if first_of_ch and t - scene["t0"] < 4.6 and scene["ch"] != 12 or (scene["n"] == 20 and t - scene["t0"] < 4.6):
         img = card(f"ch{scene['ch']:02d}")
         if img is not None:
@@ -1147,11 +1180,12 @@ def draw_frame(c, t, shot=None):
                 c.drawImage(img, 70, H - 70 - img.height(), skia.SamplingOptions(), skia.Paint(Alphaf=a))
     # scene fades
     a = 0.0
-    if t - scene["t0"] < FADE:
+    first, last = scene is tl["scenes"][0], scene is tl["scenes"][-1]
+    if t - scene["t0"] < FADE and (DISSOLVE <= 0 or first):
         a = 1 - (t - scene["t0"]) / FADE
-    if scene["t1"] - t < FADE:
+    if scene["t1"] - t < FADE and (DISSOLVE <= 0 or last):
         a = max(a, 1 - (scene["t1"] - t) / FADE)
-    black(c, a)
+    black(c, max(0.0, a))
 
 # ───────────────────────────────────────────────────────────── encoding
 def render_shot(i):

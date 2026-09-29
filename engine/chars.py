@@ -309,7 +309,7 @@ class Rig:
         pdy = p.get("pdy", 0) or 0
         seat = p.get("seat", 0) or 0
         floor = p.get("floor", 0) or 0
-        pel_y = lerp(-leg + pdy, -46.0, seat)      # seated on a ~46 cm stool
+        pel_y = lerp(-leg + pdy, -46.0 * leg / 78.0, seat)      # seated on a stool (~46 cm for an adult)
         if floor > 0:                              # sitting on a mat / floor
             pel_y = lerp(-leg + pdy, -15.0, floor)
         elif cyc:                                  # on the cyclo saddle
@@ -468,7 +468,7 @@ class Rig:
         style = s["shirt_style"]
         g.limb([S, E, W], aw, skin)
         # sleeve
-        if style in ("short", "short_collar", "short_open", "work_rolled", "uniform_short"):
+        if style in ("short", "short_collar", "short_open", "work_rolled", "uniform_short", "tunic"):
             f = 0.62 if style != "work_rolled" else 0.95
             Ms = (S[0] + (E[0] - S[0]) * f, S[1] + (E[1] - S[1]) * f)
             if style == "work_rolled":
@@ -583,7 +583,14 @@ class Rig:
             far = side == "f"
             col = shade(pants, 0.14) if far else pants
             skin = shade(s["skin"], 0.12) if far else s["skin"]
-            if style == "rolled":
+            if style == "cropped":
+                cut = (K[0] + (A[0] - K[0]) * 0.55, K[1] + (A[1] - K[1]) * 0.55)
+                g.limb([K, A], lw * 0.62, skin)
+                g.limb([H, K, cut], lw * 1.22, col, cap=skia.Paint.kButt_Cap)
+                g.limb([(cut[0] - (A[0] - K[0]) * 0.08, cut[1] - (A[1] - K[1]) * 0.08), cut], lw * 1.3,
+                       shade(col, 0.1), cap=skia.Paint.kButt_Cap)
+                g.circle(H[0], H[1], lw * 0.6, col, outline=False)
+            elif style == "rolled":
                 cut = (K[0] + (A[0] - K[0]) * 0.45, K[1] + (A[1] - K[1]) * 0.45)
                 g.limb([K, A], lw * 0.6, skin)
                 g.limb([H, K, cut], lw, col, cap=skia.Paint.kButt_Cap)
@@ -639,7 +646,7 @@ class Rig:
         at = J["at_torso"]
         sw, ww, hw, tl = s["shoulder"], s["waist"], s["hip"], s["torso_len"]
         bl = s["belly"]
-        hem = tl + (8 if s["shirt_style"] in ("short_open", "work_rolled", "singlet", "blouse", "blouse_long")
+        hem = tl + (8 if s["shirt_style"] in ("short_open", "work_rolled", "singlet", "blouse", "blouse_long", "tunic")
                     else (34 if s["shirt_style"] == "coat" else 2))
         pts = [at(-0.5 * sw, 6), at(-0.3 * sw, -0.5), at(0.0, -2.0), at(0.3 * sw, -0.8), at(0.5 * sw, 6),
                at(0.48 * sw + bl * 0.3, tl * 0.38), at(0.42 * ww + bl, tl * 0.7), at(0.47 * hw + bl * 0.4, hem),
@@ -756,12 +763,99 @@ class Rig:
             for fx in (-0.4, 0.38):
                 q = at(fx * sw, 1.5)
                 g.shape(rrect(q[0] - 4.5, q[1] - 1.6, 9, 3.2, 1.2), "#7a1f1a")
+        if style == "tunic":
+            g.line([at(-0.05 * sw, 0), at(0.2 * sw, 9), at(0.42 * sw, 0.5)], color=shade(shirt, 0.3), w=g.lw())
+            g.line([at(0.2 * sw, 9), at(0.26 * sw, tl * 0.55)], color=shade(shirt, 0.2), w=g.lw() * 0.7)
+        if "robe_over" in s["extras"]:
+            self.draw_robe(g, J, st)
         if "krama_neck" in s["extras"] or "krama_shoulder" in s["extras"]:
             self.draw_krama(g, J, st)
+        if "sash_waist" in s["extras"]:
+            self.draw_sash(g, J, st)
+        if "scarf_red" in s["extras"]:
+            self.draw_scarf(g, J, st)
+        if "shoulder_bag" in s["extras"]:
+            self.draw_bag(g, J, st)
         if "rag_shoulder" in s["extras"]:
             q = at(-0.3 * sw, 2)
             g.shape(poly([(q[0] - 5, q[1] - 2), (q[0] + 4, q[1] - 3), (q[0] + 6, q[1] + 16), (q[0] - 2, q[1] + 18)]),
                     "#c9c1a8")
+
+    def draw_sash(self, g, J, st):
+        """a red waist sash tied at the front with two tails that sway in the breeze."""
+        s = self.s
+        at = J["at_torso"]
+        tl, hw, sw = s["torso_len"], s["hip"], s["shoulder"]
+        col = s.get("sash", "#b3312c")
+        t = st.get("t", 0)
+        wind = st.get("wind", 0.0)
+        band = smooth([at(-0.52 * hw, tl - 7), at(0.0, tl - 8), at(0.5 * hw, tl - 6), at(0.5 * hw, tl + 2),
+                       at(0.0, tl + 1), at(-0.52 * hw, tl + 1)], tension=0.35)
+        g.shape(band, col)
+        g.line([at(-0.45 * hw, tl - 3), at(0.45 * hw, tl - 2)], color=shade(col, 0.25), w=g.lw() * 0.6)
+        kx = 0.3 * hw
+        ks = tl / 52.0
+        for k, (ln, ph) in enumerate(((22 * ks, 0.0), (17 * ks, 1.3))):
+            sway = (2.0 + 4.0 * wind) * math.sin(t * (2.2 + 2.5 * wind) + ph) - 6 * wind
+            p0 = at(kx - 2 + k * 4, tl - 2)
+            sway *= ks
+            tail = poly([(p0[0] - 2.6, p0[1]), (p0[0] + 2.6, p0[1]),
+                         (p0[0] + 3 + sway * 0.6 + k * 3, p0[1] + ln), (p0[0] - 2 + sway + k * 3, p0[1] + ln + 1)])
+            g.shape(tail, shade(col, 0.06 * k))
+        q = at(kx, tl - 3)
+        g.shape(smooth([(q[0] - 4, q[1] - 3), (q[0] + 4, q[1] - 3.5), (q[0] + 4.5, q[1] + 3), (q[0] - 3.5, q[1] + 3.5)]),
+                light(col, 0.08))
+
+    def draw_scarf(self, g, J, st):
+        """a plain red scarf knotted at the neck, one end fluttering."""
+        s = self.s
+        at = J["at_torso"]
+        sw = s["shoulder"]
+        col = s.get("sash", "#b3312c")
+        t = st.get("t", 0)
+        wind = st.get("wind", 0.0)
+        ring = smooth([at(-0.4 * sw, 4), at(-0.1 * sw, -3.5), at(0.25 * sw, -3), at(0.45 * sw, 3), at(0.22 * sw, 9),
+                       at(-0.12 * sw, 8)])
+        g.shape(ring, col)
+        g.line([at(-0.25 * sw, 3), at(0.3 * sw, 4)], color=shade(col, 0.25), w=g.lw() * 0.6)
+        ks = s["torso_len"] / 52.0
+        sway = (1.5 + 5 * wind) * math.sin(t * (2.0 + 3 * wind)) * ks
+        p0 = at(0.28 * sw, 6)
+        tail = poly([(p0[0] - 2.5, p0[1]), (p0[0] + 3, p0[1] - 1),
+                     (p0[0] + (4 + sway * 0.5 - 12 * wind) * ks, p0[1] + (11 - 5 * wind) * ks),
+                     (p0[0] + (-1 + sway - 14 * wind) * ks, p0[1] + (12 - 6 * wind) * ks)])
+        g.shape(tail, shade(col, 0.05))
+
+    def draw_bag(self, g, J, st):
+        """a small brown shoulder bag: strap across the chest, bag resting on the back hip."""
+        s = self.s
+        at = J["at_torso"]
+        sw, tl, hw = s["shoulder"], s["torso_len"], s["hip"]
+        col = s.get("bag", "#7a4e2c")
+        g.line([at(0.3 * sw, 1), at(0.0, tl * 0.5), at(-0.48 * hw, tl + 2)], color=shade(col, 0.15), w=2.4)
+        k = tl / 52.0
+        b = at(-0.62 * hw, tl + 3)
+        bag = smooth([(b[0] - 9 * k, b[1] - 6 * k), (b[0] + 8 * k, b[1] - 7 * k), (b[0] + 9 * k, b[1] + 9 * k),
+                      (b[0] - 8 * k, b[1] + 10 * k)], tension=0.3)
+        g.shape(bag, col)
+        g.shape(smooth([(b[0] - 9 * k, b[1] - 6 * k), (b[0] + 8 * k, b[1] - 7 * k), (b[0] + 7 * k, b[1] + 1 * k),
+                        (b[0] - 8 * k, b[1] + 2 * k)], tension=0.3), light(col, 0.1))
+        g.circle(b[0], b[1] + 1.5 * k, 1.3 * k, "#c9a44a", outline=False)
+
+    def draw_robe(self, g, J, st):
+        """an open brown over-robe with gold trim (the old teacher)."""
+        s = self.s
+        at = J["at_torso"]
+        sw, tl, hw = s["shoulder"], s["torso_len"], s["hip"]
+        col = s.get("robe", "#7a5534")
+        gold = "#c9a44a"
+        back = smooth([at(-0.52 * sw, 4), at(-0.1 * sw, -2), at(0.08 * sw, 6), at(0.02 * sw, tl + 40),
+                       at(-0.58 * hw, tl + 42), at(-0.55 * sw, tl * 0.4)], tension=0.35)
+        g.shape(back, col)
+        front = poly([at(0.26 * sw, -1), at(0.5 * sw, 5), at(0.52 * hw, tl + 40), at(0.34 * sw, tl + 41)])
+        g.shape(front, shade(col, 0.05))
+        g.line([at(0.08 * sw, 6), at(0.02 * sw, tl + 40)], color=gold, w=g.lw() * 1.4)
+        g.line([at(0.26 * sw, -1), at(0.34 * sw, tl + 41)], color=gold, w=g.lw() * 1.4)
 
     def draw_krama(self, g, J, st):
         s = self.s
@@ -855,6 +949,12 @@ class Rig:
             g.line([(r * 0.66, r * 0.38), (r * 0.58, r * 0.62)], w=g.lw() * 0.6, alpha=a)
             g.line([(r * 0.0, -r * 0.62), (r * 0.25, -r * 0.64)], w=g.lw() * 0.5, alpha=int(a * 0.7))
         self.draw_hair(g, r, "front", st)
+        if "flower_hair" in s["extras"]:
+            fx, fy = -r * 0.62, -r * 0.78
+            for k in range(5):
+                a = k * 2 * math.pi / 5 - 0.3
+                g.circle(fx + math.cos(a) * r * 0.13, fy + math.sin(a) * r * 0.13, r * 0.12, "#fbf7ee")
+            g.circle(fx, fy, r * 0.07, "#f2c53d", outline=False)
         self.draw_brows(g, r, ex, st)
         if "headband_red" in s["extras"]:
             band = smooth([(-r * 0.98, -r * 0.35), (0, -r * 0.62), (r * 0.96, -r * 0.42), (r * 0.94, -r * 0.24),
@@ -943,6 +1043,8 @@ class Rig:
         bh = ex["bh"] * r
         ba = ex["ba"]
         col = s["hair"] if s["hair_style"] not in ("gray_bun",) else "#8e8a84"
+        if s["hair_style"] == "topknot_white":
+            col = "#d8d3ca"
         if s["hair_style"] == "bald_sides":
             col = "#2a211b"
         w = g.lw() * 3.0 * s["brow_w"]
@@ -1004,6 +1106,13 @@ class Rig:
             pth = smooth([(r * 0.2, r * 0.55), (r * 0.62, r * 0.48), (r * 0.92, r * 0.55), (r * 0.7, r * 1.05),
                           (r * 0.45, r * 1.25), (r * 0.2, r * 1.0)], tension=0.45)
             g.shape(pth, "#e8e4dc")
+        elif f == "beard_long":
+            pth = smooth([(r * 0.1, r * 0.5), (r * 0.62, r * 0.46), (r * 0.98, r * 0.52), (r * 0.86, r * 1.1),
+                          (r * 0.62, r * 1.9), (r * 0.45, r * 2.3), (r * 0.3, r * 1.7), (r * 0.02, r * 1.0)], tension=0.45)
+            g.shape(pth, "#f1eee8")
+            g.line([(r * 0.5, r * 1.0), (r * 0.48, r * 1.8)], color="#cfc9bf", w=g.lw() * 0.7)
+            g.shape(smooth([(r * 0.28, r * 0.52), (r * 0.62, r * 0.4), (r * 0.96, r * 0.5), (r * 0.9, r * 0.6),
+                            (r * 0.62, r * 0.54), (r * 0.32, r * 0.62)], tension=0.4), "#f7f5f0")
         elif f in ("mustache", "mustache_thin"):
             th = 0.09 if f == "mustache" else 0.05
             pth = smooth([(r * 0.3, r * 0.5), (r * 0.62, r * (0.46 - th)), (r * 0.9, r * 0.5), (r * 0.82, r * 0.56),
@@ -1013,7 +1122,7 @@ class Rig:
     def draw_hair(self, g, r, layer, st):
         self._draw_hair(g, r, layer, st)
         s = self.s
-        if layer == "front" and s["hair_style"] not in ("bald_sides",):
+        if layer == "front" and s["hair_style"] not in ("bald_sides", "boy_spiky"):
             hi = light(s["hair"], 0.35)
             g.line([(-r * 0.55, -r * 0.88), (-r * 0.25, -r * 1.0)], color=hi, w=g.lw() * 0.9, alpha=170)
             g.line([(r * 0.1, -r * 1.02), (r * 0.42, -r * 0.94)], color=hi, w=g.lw() * 0.7, alpha=140)
@@ -1038,7 +1147,15 @@ class Rig:
             if hs == "chignon_high":
                 g.circle(-r * 0.4, -r * 1.02, r * 0.42, col)
                 g.line([(-r * 0.75, -r * 1.05), (-r * 0.05, -r * 0.98)], color="#c9a44a", w=g.lw() * 1.4)
-            if hs in ("bun", "braids", "gray_bun", "long_back", "chignon_high"):
+            if hs == "bun_top":
+                g.circle(-r * 0.42, -r * 1.02, r * 0.4, col)
+                g.line([(-r * 0.72, -r * 0.8), (-r * 0.12, -r * 0.86)], color="#d4a93c", w=g.lw() * 1.8)
+            if hs == "topknot_white":
+                g.shape(smooth([(-r * 0.5, -r * 0.5), (-r * 1.05, r * 0.1), (-r * 1.1, r * 1.3), (-r * 0.85, r * 1.9),
+                                (-r * 0.45, r * 1.5), (-r * 0.35, r * 0.5)], tension=0.45), col)
+                g.circle(-r * 0.15, -r * 1.18, r * 0.3, col)
+                g.line([(-r * 0.4, -r * 1.0), (r * 0.1, -r * 1.02)], color="#c9a44a", w=g.lw() * 1.6)
+            if hs in ("bun", "braids", "gray_bun", "long_back", "chignon_high", "bun_top", "topknot_white"):
                 g.shape(smooth([(-r * 1.02, -r * 0.1), (-r * 0.8, -r * 0.9), (0, -r * 1.13), (r * 0.8, -r * 0.85),
                                 (r * 0.6, -r * 0.3), (-r * 0.9, r * 0.45)]), col)
             return
@@ -1069,7 +1186,13 @@ class Rig:
                                 (-r * 0.58, -r * 0.35)], tension=0.4), s["hair2"], outline=False)
             for k in range(3):
                 g.line([(-r * 0.7, -r * (0.5 + k * 0.18)), (r * 0.5, -r * (0.95 - k * 0.05))], color=hi, w=g.lw() * 0.8)
-        elif hs in ("bun", "gray_bun", "braids", "long_back", "chignon_high"):
+        elif hs == "boy_spiky":
+            P_ = [(-1.0, 0.15), (-1.14, -0.25), (-1.0, -0.45), (-1.2, -0.82), (-0.86, -0.92), (-0.82, -1.34),
+                  (-0.42, -1.12), (-0.18, -1.5), (0.1, -1.18), (0.48, -1.44), (0.62, -1.05), (1.08, -1.02),
+                  (0.98, -0.72), (1.12, -0.5), (0.86, -0.46), (0.74, -0.2), (0.56, -0.44), (0.34, -0.2),
+                  (0.2, -0.46), (-0.05, -0.28), (-0.2, -0.5), (-0.45, -0.3), (-0.58, -0.05), (-0.66, 0.1)]
+            g.shape(smooth([(x * r, y * r) for x, y in P_], tension=0.34), col)
+        elif hs in ("bun", "gray_bun", "braids", "long_back", "chignon_high", "bun_top", "topknot_white"):
             cap = smooth([(-r * 0.98, r * 0.12), (-r * 1.0, -r * 0.6), (-r * 0.45, -r * 1.12), (r * 0.4, -r * 1.1),
                           (r * 0.92, -r * 0.62), (r * 0.9, -r * 0.44), (r * 0.4, -r * 0.62), (-r * 0.1, -r * 0.66),
                           (-r * 0.45, -r * 0.35), (-r * 0.62, r * 0.1)], tension=0.45)
@@ -1111,6 +1234,13 @@ class Rig:
 
     # props held ---------------------------------------------------------------
     def draw_props(self, g, J, p, arms, st):
+        if "staff" in self.s["extras"] and not p.get("lie") and not p.get("seat"):
+            W = arms["f"][2]
+            x = W[0] + 3
+            g.line([(x, W[1] - 70), (x + 2, 0)], color="#7a4e2c", w=4.2)
+            g.c.drawArc(skia.Rect.MakeLTRB(x - 8, W[1] - 88, x + 8, W[1] - 70), 90, 300, False,
+                        g.stroke("#7a4e2c", 4.2))
+            g.circle(W[0] + 2, W[1] + 1, self.s["arm_w"] * 0.55, shade(self.s["skin"], 0.12))
         prop = p.get("prop")
         if not prop:
             return
@@ -1190,3 +1320,16 @@ def blend_pose(a, b, t):
         else:
             out[k] = vb if t >= 0.5 else va
     return out
+
+
+# ───────────────────────────────────────────────────────────── story extension
+# A story folder may add its own locked characters / poses in story_chars.py (it does `import chars` and
+# updates chars.CAST / chars.POSES / chars.BASE_POSES). Loaded here so every engine script sees them.
+def _load_story_chars():
+    import os, sys, importlib
+    sd = os.environ.get("STORY_DIR")
+    if sd and os.path.exists(os.path.join(sd, "story_chars.py")):
+        if sd not in sys.path:
+            sys.path.insert(0, sd)
+        importlib.import_module("story_chars")
+_load_story_chars()

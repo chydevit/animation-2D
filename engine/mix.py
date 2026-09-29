@@ -65,6 +65,11 @@ AMB_FOR_INSERT = {"village_sunrise": "country", "train": "train", "city_street":
                   "job_montage": "factory", "campaign": "market", "river_night": "river", "funeral": "temple",
                   "homeless_night": "rain_out", "market": "market", "alley": "night", "prison_window": "prison",
                   "garden": "country", "final_sunrise": "country", "title_end": None}
+try:                      # optional story-specific music score / insert ambiences (story/story_art.py)
+    import story_art as STORY_ART
+    AMB_FOR_INSERT.update(getattr(STORY_ART, "AMB", {}))
+except ImportError:
+    STORY_ART = None
 SFX_GAIN = {"car_arrive": -8, "car_depart": -9, "traffic_old": -12, "police_whistle": -12, "heartbeat_soft": -9,
             "crowd_murmur": -12, "pen_write": -8, "paper_page": -8, "footsteps_sandal": -7, "footsteps_concrete": -6,
             "footsteps_wood": -6, "footsteps_dirt": -8, "birds_morning": -12, "birds_city": -16, "rain_heavy": -8,
@@ -112,6 +117,10 @@ def build_audio():
             place(dlg, st, sh["speech"][0], g)
     # music with crossfades
     segs, mutes = music_segments(tl)
+    if STORY_ART is not None and hasattr(STORY_ART, "score"):
+        sc_ = STORY_ART.score(tl, SR)[:N]
+        mus[:len(sc_)] += sc_
+        segs = []
     for (t0, t1, cue) in segs:
         dur = t1 - t0 + 2.0
         m = AS.music(cue, dur, seed=int(t0) % 97)
@@ -144,11 +153,21 @@ def build_audio():
                 print("sfx fail", name, e); continue
             place(fx, x, sh["t0"] + off, db(SFX_GAIN.get(name, -8) + 4))
             off += 0.7
+    # story-timed effects: [(t, samples mono/stereo, gain_db)]
+    if STORY_ART is not None and hasattr(STORY_ART, "sfx_events"):
+        for (t_, x, gdb) in STORY_ART.sfx_events(tl, SR):
+            place(fx, np.asarray(x, np.float32), t_, db(gdb))
     # ducking: music & ambience dip under dialogue
     env = smooth_env(dlg.mean(1))
-    duck = 1.0 - 0.72 * np.clip(env / 0.05, 0, 1)
-    mus *= (db(-14) * duck)[:, None]
-    amb *= (db(-19) * (1 - 0.35 * np.clip(env / 0.05, 0, 1)))[:, None]
+    mdb = getattr(STORY_ART, "MUSIC_DB", -14) if STORY_ART is not None else -14
+    depth = getattr(STORY_ART, "DUCK", 0.72) if STORY_ART is not None else 0.72
+    duck = 1.0 - depth * np.clip(env / 0.05, 0, 1)
+    mus *= (db(mdb) * duck)[:, None]
+    amb *= (db(getattr(STORY_ART, "AMB_DB", -19) if STORY_ART is not None else -19)
+            * (1 - 0.35 * np.clip(env / 0.05, 0, 1)))[:, None]
+    fxd = getattr(STORY_ART, "FX_DUCK", 0.0) if STORY_ART is not None else 0.0
+    if fxd:
+        fx *= (1 - fxd * np.clip(env / 0.05, 0, 1))[:, None]
     mixb = dlg + mus + amb + fx
     # soft limiter
     pk = np.abs(mixb).max()
