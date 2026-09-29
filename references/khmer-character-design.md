@@ -198,23 +198,23 @@ Top row (left → right):
 
 | # | Character | Locked design |
 |---|-----------|---------------|
-| 1 | Adult man (father figure) | Short black hair; green long-sleeve shirt with small slit collar; red waist sash with hanging tail; gray loose pants; dark flat shoes. Adult version of the boy's outfit. |
-| 2 | Adult woman (mother figure) | Black hair in a low bun with a pink flower; gold earrings and necklace; strapless golden wrapped top and golden draped skirt; red belt; gold armband; brown sandals. |
-| 3 | Village boy | Short black hair; cream/white short-sleeve shirt; red waist sash; brown knee-length pants; brown sandals. Often pointing / curious. |
-| 4 | Village girl | Black hair in a high bun with a small white flower; cream short-sleeve blouse; orange-red sarong; dark shoes. Shy, hands clasped. |
-| 5 | Grandfather | Gray hair; gray moustache and pointed goatee; white long-sleeve shirt; red-and-white checkered krama over one shoulder; dark brown pants; wooden walking cane; brown sandals. |
-| 6 | Grandmother | Gray hair in a bun with a small white flower; cream long-sleeve blouse; red-and-white checkered krama over one shoulder; brown patterned long sarong; dark shoes. Hands clasped. |
+| 1 | **Pa Visal** (ពុក វិសាល) — adult man (father figure) | Short black hair; green long-sleeve shirt with small slit collar; red waist sash with hanging tail; gray loose pants; dark flat shoes. Adult version of the boy's outfit. |
+| 2 | **Mae Chanthou** (ម៉ែ ចន្ធូ) — adult woman (mother figure) | Black hair in a low bun with a pink flower; gold earrings and necklace; strapless golden wrapped top and golden draped skirt; red belt; gold armband; brown sandals. |
+| 3 | **Kosal** (កុសល) — village boy | Short black hair; cream/white short-sleeve shirt; red waist sash; brown knee-length pants; brown sandals. Often pointing / curious. |
+| 4 | **Sreyleak** (ស្រីល័ក្ខ) — village girl | Black hair in a high bun with a small white flower; cream short-sleeve blouse; orange-red sarong; dark shoes. Shy, hands clasped. |
+| 5 | **Ta Samnang** (តា សំណាង) — grandfather | Gray hair; gray moustache and pointed goatee; white long-sleeve shirt; red-and-white checkered krama over one shoulder; dark brown pants; wooden walking cane; brown sandals. |
+| 6 | **Yeay Sokhom** (យាយ សុខុម) — grandmother | Gray hair in a bun with a small white flower; cream long-sleeve blouse; red-and-white checkered krama over one shoulder; brown patterned long sarong; dark shoes. Hands clasped. |
 
 Bottom row (left → right):
 
 | # | Character | Locked design |
 |---|-----------|---------------|
-| 7 | Monk | Shaved head; saffron-orange robe over one shoulder; holds a black alms bowl with both hands; brown sandals. Always calm and respectful — never comic or disrespectful. |
-| 8 | Ancient Khmer warrior | Golden pointed temple-style helmet; brown tunic with gold ornaments and gold chest medallion; red sash with hanging tails; brown shorts; gold arm and leg bands; tall spear with red tassel; sandals. |
-| 9 | Apsara dancer | Golden spiked crown; long black hair with a white flower; gold necklace, armbands and bracelets; white top; red-and-cream skirt with gold trim; bare feet or small sandals; classic apsara hand gesture (fingers bent back). |
-| 10 | Rice farmer | Wide conical straw hat; dark blue short-sleeve shirt; red waist sash; dark brown shorts; hoe carried over the shoulder; dark shoes. |
-| 11 | Fisherman | Red headband tied with tails; shirtless; red waist sash; navy-blue rolled-up pants; barefoot; bamboo fish trap (tall basket-shaped). |
-| 12 | Market woman / villager | Red-and-white checkered krama as a headscarf; cream long-sleeve blouse; brown long sarong; woven basket with green vegetables and a pink lotus. |
+| 7 | **Venerable Sovann** (លោកសង្ឃ សុវណ្ណ) — monk | Shaved head; saffron-orange robe over one shoulder; holds a black alms bowl with both hands; brown sandals. Always calm and respectful — never comic or disrespectful. |
+| 8 | **Kiri** (គិរី) — ancient Khmer warrior | Golden pointed temple-style helmet; brown tunic with gold ornaments and gold chest medallion; red sash with hanging tails; brown shorts; gold arm and leg bands; tall spear with red tassel; sandals. |
+| 9 | **Tevy** (ទេវី) — apsara dancer | Golden spiked crown; long black hair with a white flower; gold necklace, armbands and bracelets; white top; red-and-cream skirt with gold trim; bare feet or small sandals; classic apsara hand gesture (fingers bent back). |
+| 10 | **Bong Sambath** (បង សម្បត្តិ) — rice farmer | Wide conical straw hat; dark blue short-sleeve shirt; red waist sash; dark brown shorts; hoe carried over the shoulder; dark shoes. |
+| 11 | **Bong Rith** (បង រិទ្ធិ) — fisherman | Red headband tied with tails; shirtless; red waist sash; navy-blue rolled-up pants; barefoot; bamboo fish trap (tall basket-shaped). |
+| 12 | **Ming Srey Mom** (មីង ស្រីមុំ) — market woman / villager | Red-and-white checkered krama as a headscarf; cream long-sleeve blouse; brown long sarong; woven basket with green vegetables and a pink lotus. |
 
 Shared rules for the supporting cast:
 - Same warm tan skin tone and same head-to-body proportions as the main characters.

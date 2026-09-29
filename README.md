@@ -144,6 +144,23 @@ See [`references/khmer-character-design.md`](references/khmer-character-design.m
 
 <p align="center"><img src="characters/character-sheet.png" width="49%"> <img src="characters/supporting-cast.png" width="49%"></p>
 
+**Supporting cast names** (left → right on `supporting-cast.png`):
+
+| Top row | | Bottom row | |
+|---|---|---|---|
+| **Pa Visal** (ពុក វិសាល) | father | **Venerable Sovann** (លោកសង្ឃ សុវណ្ណ) | monk |
+| **Mae Chanthou** (ម៉ែ ចន្ធូ) | mother | **Kiri** (គិរី) | ancient warrior |
+| **Kosal** (កុសល) | village boy | **Tevy** (ទេវី) | apsara dancer |
+| **Sreyleak** (ស្រីល័ក្ខ) | village girl | **Bong Sambath** (បង សម្បត្តិ) | rice farmer |
+| **Ta Samnang** (តា សំណាង) | grandfather | **Bong Rith** (បង រិទ្ធិ) | fisherman |
+| **Yeay Sokhom** (យាយ សុខុម) | grandmother | **Ming Srey Mom** (មីង ស្រីមុំ) | market woman |
+
+*Pa / Mae / Ta / Yeay / Bong / Ming* are Khmer family words (dad, mom, grandpa, grandma, older sibling,
+auntie), so children can tell at once who is who.
+
+To design **new** characters that fit this world or the Dara world, see the companion skill
+[khmer-2d-character-creator](https://github.com/chydevit/khmer-2d-character-creator).
+
 ## ✨ Features
 
 | | |
