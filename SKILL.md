@@ -14,6 +14,8 @@ Priority order for every decision: **CHARACTER CONSISTENCY > STORY CONTINUITY > 
 | `engine/` | the film pipeline (rigs, sets, planner, renderer, TTS, audio, mix, docs, QA). Run `engine/run_all.sh <story_dir> <episode_dir>` |
 | `examples/preah-atit/story/` | a complete 15-minute film: `script_data.py` (screenplay) + `project.py` (titles, voices, notes) |
 | `templates/story/` | starter `script_data.py` + `project.py` for a new film |
+| `engine/new_story.sh <film>` | start a new film folder from the template |
+| `install.sh` | one-step install/update of the skill + Python environments + ffmpeg |
 | `characters/` | reference sheets of the Khmer boy/girl (`character-sheet.png`) and the supporting cast (`supporting-cast.png`) |
 | `references/khmer-character-design.md` | the full character design system (locked designs, poses, expressions, prompt templates) |
 | `references/workflow.md` | step-by-step production workflow, lessons learned, troubleshooting |

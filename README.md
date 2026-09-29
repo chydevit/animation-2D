@@ -7,6 +7,23 @@ music & sound → Khmer/English subtitles → a finished 1080p MP4, with storybo
 Also a [Claude Code](https://claude.com/claude-code) skill (`SKILL.md`) that includes the **Khmer Cartoon Character
 Design System** (Khmer boy & girl + 12 supporting characters).
 
+## Install (one step)
+
+**Claude Code skill + everything it needs** (macOS / Linux):
+```bash
+curl -fsSL https://raw.githubusercontent.com/chydevit/animation-2D/main/install.sh | bash
+```
+It installs the skill into `~/.claude/skills/create-animation-2d`, creates the two Python environments
+(`~/anim-env`, `~/voxcpm-env`), installs ffmpeg/Python 3.12 with Homebrew if missing, and checks Khmer text support.
+Re-run it any time to update. Options: `| bash -s -- --skill-only` (skill only) · `--no-voice` · `--dir PATH`.
+
+**Start your own project from this repo:** click **Use this template** at the top of the GitHub page.
+
+**Start a new film:**
+```bash
+~/.claude/skills/create-animation-2d/engine/new_story.sh ~/animation-2d-films/my-film
+```
+
 ![cast](docs/images/cast.png)
 
 | | | |
@@ -29,7 +46,7 @@ Design System** (Khmer boy & girl + 12 supporting characters).
   QA reports, subtitles (SRT + embedded tracks).
 - **Content care**: sensitive events are implied only; political material kept neutral.
 
-## Requirements
+## Requirements (installed by `install.sh`)
 - macOS on Apple Silicon (16 GB RAM; close heavy apps while voicing), or Linux with CUDA for VoxCPM2
 - `ffmpeg`
 - Two Python 3.12 environments:
