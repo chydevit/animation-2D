@@ -161,6 +161,28 @@ auntie), so children can tell at once who is who.
 To design **new** characters that fit this world or the Dara world, see the companion skill
 [khmer-2d-character-creator](https://github.com/chydevit/khmer-2d-character-creator).
 
+### 🧸 Dara-world rigs (ready to animate)
+Eleven characters from the [khmer-2d-character-creator](https://github.com/chydevit/khmer-2d-character-creator)
+master sheet are rigged in [`engine/cast_dara.py`](engine/cast_dara.py) and can walk, talk (lip-sync), blink and act in any film:
+
+<p align="center"><img src="docs/images/dara-world-lineup.png" alt="Dara-world rigs" width="100%"></p>
+
+| id | Character | | id | Character |
+|---|---|---|---|---|
+| `dara` | **Dara** (ដារ៉ា), young hero | | `rotha` | **Rotha** (រដ្ឋា), antagonist |
+| `malis` | **Malis** (ម្លិះ), friend | | `sophea` | **Mother Sophea** (ម្ដាយ សុភា) |
+| `sokha` | **Lok Ta Sokha** (លោកតា សុខា), mentor | | `puppy` | Puppy (wags, barks, walks) |
+| `veasna` | **Veasna** (វាសនា), young warrior | | `monkey` | Monkey (hops, curled tail) |
+| `bopha` | **Princess Bopha** (ព្រះនាង បុប្ផា) | | `elephant` | Baby elephant (ear flap, trunk sway) |
+| `jayavuth` | **King Jayavuth** (ស្ដេច ជ័យវុធ) | | | |
+
+Use them in a film: in `story/story_chars.py` write `import cast_dara; cast_dara.register()`
+(or `cast_dara.register(["dara", "puppy"])`). Voice prompts and character info to copy are in
+[`examples/dara-world/story/project.py`](examples/dara-world/story/project.py). Draw every sheet with
+`STORY_DIR=examples/dara-world/story EPISODE_DIR=/tmp/dara-world python engine/sheet.py all`.
+
+<p align="center"><img src="docs/images/dara-world-jayavuth-sheet.png" width="32%"> <img src="docs/images/dara-world-sophea-sheet.png" width="32%"> <img src="docs/images/dara-world-puppy-sheet.png" width="32%"></p>
+
 ## ✨ Features
 
 | | |

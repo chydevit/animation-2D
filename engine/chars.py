@@ -8,6 +8,10 @@ SKIN_PHANIT = "#d39a68"
 KRAMA_RED = ("#b3312c", "#f1eadb")
 KRAMA_BLUE = ("#2f5d8a", "#eee9dc")
 
+GOLD = "#d4a93c"
+TIED_HAIR = ("bun", "braids", "gray_bun", "long_back", "chignon_high", "bun_top", "topknot_white",
+             "topknot_black", "long_straight")
+
 # ───────────────────────────────────────────────────────────── character specs
 BASE = dict(H=165, head_r=14.5, head_wx=1.0, jaw=0.0, shoulder=38, waist=31, hip=32, belly=0,
             torso_len=52, leg_len=78, arm_up=29, arm_lo=26, arm_w=9.0, leg_w=12.5,
@@ -286,6 +290,8 @@ class Rig:
     # ------------------------------------------------------------ skeleton
     def skeleton(self, p, t=0.0, breath=0.0, walk=None):
         s = self.s
+        if s.get("animal"):
+            return self.animal_skeleton(t, walk)
         leg, tl, r = self.dims()
         thigh, shin = leg * 0.5, leg * 0.5
         # legs
@@ -425,6 +431,8 @@ class Rig:
         """st: dict(pose=dict, facing=+1/-1, scale, t, blink, look=(dx,dy), expr=dict, mouth=(shape, amt),
         walk=phase or None, breath, tint=None, alpha)"""
         s = self.s
+        if s.get("animal"):
+            return self.draw_animal(canvas, zoom, x, y, st)
         g = Ctx(canvas, zoom * st.get("scale", 1.0))
         p = st["pose"]
         facing = st.get("facing", 1)
@@ -448,6 +456,8 @@ class Rig:
         if not p.get("lie") and st.get("shadow", True):
             sh = skia.Paint(AntiAlias=True, Color=rgb("#2a1a10", 60))
             canvas.drawOval(skia.Rect.MakeLTRB(-s["hip"] * 0.95, -3.5, s["hip"] * 1.05, 3.5), sh)
+        if "cape" in s["extras"] and not p.get("lie"):
+            self.draw_cape(g, J, p, st)
         self.draw_arm(g, J, arms["f"], "f", p)
         self.draw_legs(g, J, p, st)
         self.draw_torso(g, J, p, st)
@@ -490,6 +500,20 @@ class Rig:
             g.limb([S, Ms], aw + 2.2, shirt)
         elif style == "singlet":
             pass
+        ex_ = s["extras"]
+        def seg(A, B, f0, f1):
+            return [(A[0] + (B[0] - A[0]) * f0, A[1] + (B[1] - A[1]) * f0),
+                    (A[0] + (B[0] - A[0]) * f1, A[1] + (B[1] - A[1]) * f1)]
+        gold = shade(GOLD, 0.12) if far else GOLD
+        if "armbands_gold" in ex_:
+            g.limb(seg(S, E, 0.42, 0.56), aw + 2.0, gold, cap=skia.Paint.kButt_Cap)
+        if "arm_guards" in ex_:
+            g.limb(seg(E, W, 0.3, 0.9), aw + 2.6, gold, cap=skia.Paint.kButt_Cap)
+            g.line(seg(E, W, 0.34, 0.86), color=shade(gold, 0.3), w=g.lw() * 0.7)
+        if "bangles" in ex_:
+            g.limb(seg(E, W, 0.84, 0.93), aw + 1.6, gold, cap=skia.Paint.kButt_Cap)
+        if "bracelet_thread" in ex_ and not far:
+            g.limb(seg(E, W, 0.88, 0.93), aw + 1.0, "#b3312c", cap=skia.Paint.kButt_Cap)
         if "watch" in s["extras"] and not far:
             wp = (E[0] + (W[0] - E[0]) * 0.95, E[1] + (W[1] - E[1]) * 0.95)
             g.limb([wp, (wp[0] + (W[0] - E[0]) * 0.035, wp[1] + (W[1] - E[1]) * 0.035)], aw * 0.55, "#c9a13a",
@@ -571,9 +595,13 @@ class Rig:
                 # woven stripes
                 c = g.c
                 c.save(); c.clipPath(pth, skia.ClipOp.kIntersect, True)
-                for i in range(6):
-                    yy = pel[1] + 8 + i * (bot - pel[1] - 8) / 6
-                    g.line([(xl - 20, yy), (xr + 20, yy + 2)], color=s["skirt2"], w=2.0)
+                ns = s.get("skirt_stripes", 6)
+                if ns == 1:        # one woven band near the hem
+                    g.line([(xl - 20, bot - 7), (xr + 20, bot - 5)], color=s["skirt2"], w=3.4)
+                else:
+                    for i in range(ns):
+                        yy = pel[1] + 8 + i * (bot - pel[1] - 8) / ns
+                        g.line([(xl - 20, yy), (xr + 20, yy + 2)], color=s["skirt2"], w=2.0)
                 c.restore()
                 g.c.drawPath(pth, g.stroke(OUTLINE, g.lw()))
             return
@@ -608,6 +636,12 @@ class Rig:
                 L = math.hypot(vx, vy) or 1
                 A2 = (A[0] - vx / L * lw * 0.45, A[1] - vy / L * lw * 0.45)
                 g.limb([H, K, A2], lw, col)
+            if "shin_guards" in s["extras"]:
+                gold = shade(GOLD, 0.12) if far else GOLD
+                q0 = (K[0] + (A[0] - K[0]) * 0.2, K[1] + (A[1] - K[1]) * 0.2)
+                q1 = (K[0] + (A[0] - K[0]) * 0.78, K[1] + (A[1] - K[1]) * 0.78)
+                g.limb([q0, q1], lw * 1.05, gold, cap=skia.Paint.kButt_Cap)
+                g.line([q0, q1], color=shade(gold, 0.3), w=g.lw() * 0.7)
             self.draw_foot(g, A, side, p, st)
         # hips/seat block joins legs to torso
         pel = J["pel"]
@@ -673,8 +707,22 @@ class Rig:
         c.drawPath(sh, g.fill(shade(shirt, 0.16)))
         if style == "singlet":
             pass
+        if style == "strapless":       # bare shoulders above a wrapped top
+            c.drawPath(smooth([at(-0.7 * sw, -6), at(0.7 * sw, -6), at(0.7 * sw, 9), at(0.0, 11), at(-0.7 * sw, 8)],
+                              tension=0.3), g.fill(s["skin"]))
+        if style == "armor":           # gold breastplate: shaded bands + a big central ornament
+            for fy in (tl * 0.45, tl * 0.62):
+                g.line([at(-0.55 * sw, fy), at(0.55 * sw, fy + 1)], color=shade(shirt, 0.3), w=g.lw() * 0.8)
         c.restore()
         g.c.drawPath(body, g.stroke(OUTLINE, g.lw()))
+        if style == "strapless":
+            g.limb([at(-0.46 * sw, 9), at(0.0, 11), at(0.46 * sw, 9)], 3.2, GOLD)
+            q = at(0.18 * sw, 13)
+            g.shape(poly([(q[0], q[1] - 3.2), (q[0] + 3, q[1]), (q[0], q[1] + 3.6), (q[0] - 3, q[1])]), GOLD)
+        if style == "armor":
+            q = at(0.12 * sw, tl * 0.3)
+            g.shape(poly([(q[0], q[1] - 9), (q[0] + 8, q[1]), (q[0], q[1] + 10), (q[0] - 8, q[1])]), light(shirt, 0.15))
+            g.circle(q[0], q[1], 2.6, "#9e2a2a")
         if style in ("short_collar", "short", "short_open", "work_rolled", "uniform"):
             # placket + buttons
             g.line([at(0.2 * sw, 4), at(0.24 * sw, tl - 2)], color=shade(shirt, 0.25), w=g.lw() * 0.8)
@@ -766,12 +814,52 @@ class Rig:
         if style == "tunic":
             g.line([at(-0.05 * sw, 0), at(0.2 * sw, 9), at(0.42 * sw, 0.5)], color=shade(shirt, 0.3), w=g.lw())
             g.line([at(0.2 * sw, 9), at(0.26 * sw, tl * 0.55)], color=shade(shirt, 0.2), w=g.lw() * 0.7)
+        ex_ = s["extras"]
+        if "chest_medallion" in ex_:
+            g.line([at(0.34 * sw, 0), at(0.0, tl * 0.45), at(-0.46 * s["hip"], tl - 4)], color="#6b4226", w=2.6)
+            q = at(0.14 * sw, tl * 0.3)
+            g.shape(poly([(q[0], q[1] - 5.5), (q[0] + 5, q[1]), (q[0], q[1] + 6), (q[0] - 5, q[1])]), GOLD)
+        if "shoulder_guards" in ex_:
+            big = 1.3 if style == "armor" else 1.0
+            for fx, far_ in ((-0.4, False), (0.34, True)):
+                q = at(fx * sw, 2.5)
+                col = shade(GOLD, 0.14) if far_ else GOLD
+                g.shape(smooth([(q[0] - 7 * big, q[1] + 1), (q[0] - 4 * big, q[1] - 4 * big), (q[0] + 5 * big, q[1] - 4 * big),
+                                (q[0] + 8 * big, q[1] + 2), (q[0] + 4 * big, q[1] + 6 * big), (q[0] - 5 * big, q[1] + 6 * big)],
+                               tension=0.4), col)
+                g.line([(q[0] - 5 * big, q[1] + 2), (q[0] + 6 * big, q[1] + 2)], color=shade(col, 0.3), w=g.lw() * 0.7)
+        if "cape" in ex_:              # the cape's fold over the back shoulder
+            cc = s.get("cape", "#9e2a2a")
+            g.shape(smooth([at(-0.55 * sw, 8), at(-0.45 * sw, -2), at(-0.15 * sw, -3), at(-0.3 * sw, 10)], tension=0.4), cc)
+        if "basket_hip" in ex_:
+            self.draw_basket(g, J, st)
         if "robe_over" in s["extras"]:
             self.draw_robe(g, J, st)
         if "krama_neck" in s["extras"] or "krama_shoulder" in s["extras"]:
             self.draw_krama(g, J, st)
         if "sash_waist" in s["extras"]:
             self.draw_sash(g, J, st)
+        if "front_panel" in ex_:
+            hw = s["hip"]
+            pan = poly([at(0.02 * hw, tl), at(0.42 * hw, tl), at(0.38 * hw, tl + 34), at(0.06 * hw, tl + 34)])
+            g.shape(pan, "#e8d9b0")
+            for k in range(3):
+                q = at(0.22 * hw, tl + 8 + k * 9)
+                g.shape(poly([(q[0], q[1] - 3), (q[0] + 3, q[1]), (q[0], q[1] + 3), (q[0] - 3, q[1])]), GOLD, olw=g.lw() * 0.6)
+        if "gold_belt" in ex_:
+            hw = s["hip"]
+            b1, b2 = at(-0.52 * hw, tl - 1), at(0.5 * hw, tl - 1)
+            g.limb([b1, b2], 3.6, GOLD)
+            q = at(0.18 * hw, tl - 1)
+            g.shape(poly([(q[0], q[1] - 5), (q[0] + 5, q[1]), (q[0], q[1] + 5), (q[0] - 5, q[1])]), light(GOLD, 0.15))
+            g.circle(q[0], q[1], 1.5, "#9e2a2a", outline=False)
+        if "sword_hip" in ex_:
+            hw = s["hip"]
+            h0 = at(-0.35 * hw, tl + 2)
+            g.limb([h0, (h0[0] - 22, h0[1] + 30)], 4.2, "#2a1d16")
+            g.line([(h0[0] - 20, h0[1] + 27), (h0[0] - 22, h0[1] + 30)], color=GOLD, w=4.6)
+            g.limb([h0, (h0[0] + 6, h0[1] - 9)], 2.6, "#5a3a22")
+            g.line([(h0[0] - 3, h0[1] + 2), (h0[0] + 3, h0[1] - 2)], color=GOLD, w=2.8)
         if "scarf_red" in s["extras"]:
             self.draw_scarf(g, J, st)
         if "shoulder_bag" in s["extras"]:
@@ -780,6 +868,208 @@ class Rig:
             q = at(-0.3 * sw, 2)
             g.shape(poly([(q[0] - 5, q[1] - 2), (q[0] + 4, q[1] - 3), (q[0] + 6, q[1] + 16), (q[0] - 2, q[1] + 18)]),
                     "#c9c1a8")
+
+    def draw_cape(self, g, J, p, st):
+        """a long cape hanging behind the body from the shoulders; optional high collar (villain)."""
+        s = self.s
+        at = J["at_torso"]
+        sw, tl = s["shoulder"], s["torso_len"]
+        col = s.get("cape", "#9e2a2a")
+        t = st.get("t", 0)
+        wind = st.get("wind", 0.0)
+        sway = (2 + 8 * wind) * math.sin(t * (1.6 + 2 * wind))
+        low = 0.0 if not (p.get("seat") or p.get("kneel")) else -0.45
+        L = tl + s["leg_len"] * (0.82 + low)
+        pts = [at(-0.52 * sw, 2), at(0.3 * sw, 1), at(0.1 * sw, tl * 0.6),
+               at(0.05 * sw + sway * 0.3, L), at(-0.62 * sw - 10 * wind + sway, L + 2),
+               at(-0.6 * sw - 6 * wind + sway * 0.6, tl * 0.5)]
+        cape = smooth([(x_, min(y_, -2.0)) for x_, y_ in pts], tension=0.35)   # never below the ground
+        g.shape(cape, shade(col, 0.18))
+        g.line([at(-0.3 * sw, tl * 0.4), at(-0.35 * sw + sway * 0.6, L - 4)], color=shade(col, 0.35), w=g.lw() * 0.8)
+        if "cape_collar" in s["extras"]:
+            n = J["neck"]
+            r = s["head_r"]
+            g.shape(poly([(n[0] - r * 0.9, n[1] + 6), (n[0] - r * 1.25, n[1] - r * 1.25), (n[0] - r * 0.2, n[1] - r * 0.3),
+                          (n[0] + r * 0.2, n[1] + 4)]), col)
+
+    def draw_basket(self, g, J, st):
+        """a woven bamboo basket of greens resting on the front hip."""
+        s = self.s
+        at = J["at_torso"]
+        tl, hw = s["torso_len"], s["hip"]
+        b = at(0.62 * hw + 4, tl + 2)
+        k = tl / 52.0
+        for i, dx in enumerate((-6, 0, 6)):
+            g.circle(b[0] + dx * k, b[1] - 7 * k, 4.2 * k, ("#5f9a4a", "#6fae55", "#548a40")[i])
+        bowl = smooth([(b[0] - 12 * k, b[1] - 6 * k), (b[0] + 12 * k, b[1] - 6 * k), (b[0] + 9 * k, b[1] + 7 * k),
+                       (b[0] - 9 * k, b[1] + 7 * k)], tension=0.35)
+        g.shape(bowl, "#b88a4a")
+        g.c.save(); g.c.clipPath(bowl, skia.ClipOp.kIntersect, True)
+        for i in range(-3, 4):
+            g.line([(b[0] + i * 4 * k, b[1] - 7 * k), (b[0] + i * 3 * k, b[1] + 8 * k)], color="#8f6532", w=g.lw() * 0.6)
+        g.c.restore()
+        g.limb([(b[0] - 12 * k, b[1] - 6 * k), (b[0] + 12 * k, b[1] - 6 * k)], 2.2, "#a0773c")
+
+    # animals ------------------------------------------------------------------
+    # A spec with animal="dog" | "monkey" | "elephant" is drawn by these instead of the human rig.
+    # They face screen-right, stand on the ground line, blink, lip-sync (open mouth), wag / sway and walk.
+    def animal_skeleton(self, t=0.0, walk=None):
+        kind = self.s["animal"]
+        bob = -1.2 * abs(math.sin(walk)) if walk is not None else 0.0
+        if kind == "monkey" and walk is not None:
+            bob = -4.0 * abs(math.sin(walk))
+        head = {"dog": (20, -44), "monkey": (2, -40), "elephant": (27, -52)}[kind]
+        neck = {"dog": (13, -33), "monkey": (2, -29), "elephant": (18, -44)}[kind]
+        pel = {"dog": (-10, -24), "monkey": (0, -12), "elephant": (-12, -34)}[kind]
+        J = dict(head=(head[0], head[1] + bob), neck=(neck[0], neck[1] + bob), pel=(pel[0], pel[1] + bob),
+                 lean=0.0, head_ang=0.0, bob=bob)
+        J["at_torso"] = lambda fx, fy: (neck[0] + fx, neck[1] + bob + fy)
+        return J
+
+    def draw_animal(self, canvas, zoom, x, y, st):
+        s = self.s
+        sc = st.get("scale", 1.0)
+        g = Ctx(canvas, zoom * sc)
+        facing = st.get("facing", 1)
+        if st["pose"].get("turn"):
+            facing = -facing
+        canvas.save()
+        canvas.translate(x, y)
+        canvas.scale(sc * facing, sc)
+        J = self.animal_skeleton(st.get("t", 0), st.get("walk"))
+        if st.get("shadow", True):
+            w = {"dog": 26, "monkey": 16, "elephant": 36}[s["animal"]]
+            canvas.drawOval(skia.Rect.MakeLTRB(-w, -3, w, 3), skia.Paint(AntiAlias=True, Color=rgb("#2a1a10", 60)))
+        getattr(self, "_draw_" + s["animal"])(g, J, st)
+        canvas.restore()
+        return J
+
+    def _animal_eye(self, g, cx, cy, rr, st, iris=None):
+        ex = st.get("expr") or EXPR["neutral"]
+        eo = ex["eo"] * (1 - st.get("blink", 0.0))
+        if eo < 0.12:
+            g.line([(cx - rr, cy), (cx, cy + rr * 0.35), (cx + rr, cy)], w=g.lw() * 1.3)
+            return
+        lx, ly = st.get("look", (0.35, 0.0))
+        g.ellipse(cx, cy, rr, rr * min(1.15, 0.35 + eo * 0.8), "#1a0d06")
+        if iris:
+            g.circle(cx + lx * rr * 0.2, cy + rr * 0.1, rr * 0.62, iris, outline=False)
+            g.circle(cx + lx * rr * 0.2, cy + rr * 0.1, rr * 0.34, "#1a0d06", outline=False)
+        g.circle(cx - rr * 0.32 + lx * rr * 0.15, cy - rr * 0.35, rr * 0.34, "#ffffff", outline=False)
+        g.circle(cx + rr * 0.3, cy + rr * 0.35, rr * 0.13, "#ffffff", outline=False)
+
+    def _animal_mouth(self, g, cx, cy, w, st, tongue=True):
+        """closed smile, or an open happy/talking mouth (uses the lip-sync amount)."""
+        ex = st.get("expr") or EXPR["neutral"]
+        shape, amt = st.get("mouth", (None, 0.0))
+        if shape in (None, "closed") or amt < 0.05:
+            amt = 0.8 if ex.get("mouth") in ("smile", "surprisedO") or ex["mc"] > 0.4 else 0.0
+        if amt < 0.05:
+            curve = 0.35 * w * max(-0.6, min(1.0, ex["mc"] + 0.4))
+            g.line([(cx - w, cy - curve * 0.3), (cx, cy + curve), (cx + w, cy - curve * 0.3)], w=g.lw() * 1.1)
+            return
+        h = w * (0.5 + 0.7 * amt)
+        m = smooth([(cx - w, cy - 1), (cx + w, cy - 1), (cx + w * 0.5, cy + h), (cx - w * 0.5, cy + h)], tension=0.5)
+        g.shape(m, "#5a1f1c")
+        if tongue:
+            g.c.save(); g.c.clipPath(m, skia.ClipOp.kIntersect, True)
+            g.ellipse(cx, cy + h * 0.95, w * 0.6, h * 0.5, "#e07a7a", outline=False)
+            g.c.restore()
+
+    def _draw_dog(self, g, J, st):
+        s = self.s
+        t, walk, bob = st.get("t", 0), st.get("walk"), J["bob"]
+        white, tan = s["skin"], s["hair"]
+        for i, (lx, far) in enumerate(((-6, True), (15, True), (-13, False), (9, False))):
+            a = 22 * math.sin(walk + (0 if i % 3 == 0 else math.pi)) if walk is not None else 0
+            dx = math.sin(math.radians(a)) * 17
+            col = shade(white, 0.14) if far else white
+            g.limb([(lx, -22 + bob), (lx + dx, -2)], 6.8, col)
+            g.ellipse(lx + dx + 1.5, -2, 4.4, 2.6, col)
+        wag = math.sin(t * 9) * 12
+        g.limb([(-19, -28 + bob), (-26, -36 + bob), (-27 + wag * 0.4, -46 + bob)], 4.6, tan)
+        body = skia.Path(); body.addOval(skia.Rect.MakeLTRB(-22, -35 + bob, 20, -14 + bob))
+        g.c.drawPath(body, g.fill(white))
+        g.c.save(); g.c.clipPath(body, skia.ClipOp.kIntersect, True)
+        g.ellipse(-8, -34 + bob, 12, 8, tan, outline=False)
+        g.c.restore()
+        g.c.drawPath(body, g.stroke(OUTLINE, g.lw()))
+        g.limb([(10, -38 + bob), (16, -29 + bob)], 4.2, "#b3312c")      # red collar + gold tag
+        g.circle(15, -26.5 + bob, 1.9, GOLD)
+        hx, hy = J["head"]
+        g.c.save(); g.c.translate(hx, hy); g.c.rotate(4 * math.sin(t * 1.3))
+        g.ellipse(-6, -2, 5, 9, shade(tan, 0.12), rot=18)                 # far ear
+        g.ellipse(0, 0, 12.5, 11.5, white)
+        g.ellipse(9, 5, 7.5, 5.8, white)                                  # snout
+        g.ellipse(15.5, 2.6, 2.4, 1.8, "#1a120e")                         # nose
+        self._animal_eye(g, 3.5, -3, 2.9, st)
+        self._animal_eye(g, 10.5, -3.4, 2.2, st)
+        self._animal_mouth(g, 11, 8.2, 3.6, st)
+        g.shape(smooth([(-9, -9), (-3, -10), (-2, 2), (-6, 12), (-12, 9), (-12, -2)], tension=0.45), tan)  # near ear
+        g.c.restore()
+
+    def _draw_monkey(self, g, J, st):
+        s = self.s
+        t, bob = st.get("t", 0), J["bob"]
+        fur, face = s["hair"], s["skin"]
+        sway = math.sin(t * 1.7) * 3
+        g.limb([(-9, -8 + bob), (-15, -9 + bob), (-18, -17 + bob), (-15 + sway, -24 + bob), (-11 + sway, -21 + bob)],
+               3.4, fur)                                                  # curled tail
+        g.limb([(4, -26 + bob), (10, -16 + bob), (12, -6 + bob)], 4.2, shade(fur, 0.14))   # far arm
+        g.ellipse(0, -18 + bob, 11, 13.5, fur)                            # body
+        g.ellipse(3, -16 + bob, 6.5, 9.5, face, outline=False)            # belly
+        g.ellipse(-3, -6 + bob, 10, 6, fur)                               # haunches
+        g.ellipse(7, -1.5, 5, 2.4, face)                                  # feet
+        g.ellipse(-8, -1.5, 5, 2.4, shade(face, 0.1))
+        hx, hy = J["head"]
+        g.c.save(); g.c.translate(hx, hy); g.c.rotate(3 * math.sin(t * 1.1))
+        for ex_, far in ((-10, False), (9.5, True)):
+            g.circle(ex_, -1, 4.6, shade(fur, 0.1) if far else fur)
+            g.circle(ex_, -1, 2.6, face, outline=False)
+        g.circle(0, 0, 11, fur)
+        g.shape(smooth([(-4, -6), (2, -2.5), (9, -6), (11, 2), (6, 9), (-2, 9), (-6, 2)], tension=0.5), face)
+        self._animal_eye(g, 1.5, -2.5, 2.5, st)
+        self._animal_eye(g, 7.5, -2.5, 2.1, st)
+        g.circle(4.5, 2.3, 0.7, "#3a2217", outline=False); g.circle(6.2, 2.3, 0.7, "#3a2217", outline=False)
+        self._animal_mouth(g, 4.5, 5.2, 3.4, st, tongue=False)
+        g.c.restore()
+        g.limb([(2, -26 + bob), (8, -15 + bob), (9, -6 + bob)], 4.2, fur)  # near arm
+        g.circle(9.5, -5 + bob, 2.4, face)
+
+    def _draw_elephant(self, g, J, st):
+        s = self.s
+        t, walk, bob = st.get("t", 0), st.get("walk"), J["bob"]
+        gray = s["skin"]
+        for i, (lx, far) in enumerate(((-9, True), (17, True), (-18, False), (9, False))):
+            a = 14 * math.sin(walk + (0 if i % 3 == 0 else math.pi)) if walk is not None else 0
+            dx = math.sin(math.radians(a)) * 20
+            col = shade(gray, 0.14) if far else gray
+            g.limb([(lx, -26 + bob), (lx + dx, -4)], 11.5, col, cap=skia.Paint.kButt_Cap)
+            g.shape(rrect(lx + dx - 6.4, -6, 12.8, 6, 2.5), col)
+            for k in (-2.6, 0.4, 3.4):
+                g.circle(lx + dx + k, -2.2, 1.0, "#e9e4dc", outline=False)
+        g.limb([(-27, -40 + bob), (-31, -26 + bob)], 1.8, shade(gray, 0.2))  # tail
+        g.circle(-31, -25 + bob, 1.8, "#4a4f55", outline=False)
+        g.ellipse(-2, -36 + bob, 28, 18, gray)                            # body
+        hx, hy = J["head"]
+        flap = 1 + 0.07 * math.sin(t * 2.1)
+        sway = math.sin(t * 1.8) * 5
+        g.c.save(); g.c.translate(hx, hy)
+        g.limb([(12, 6), (17, 16), (18 + sway * 0.5, 26), (22 + sway, 29)], 7.6, gray)   # trunk
+        g.c.save(); g.c.translate(-9, 1); g.c.scale(flap, 1)
+        g.ellipse(0, 0, 13, 16, gray)                                     # ear
+        g.ellipse(0.5, 0.5, 9, 12, "#e9a8b8", outline=False)
+        g.c.restore()
+        g.circle(4, -2, 16, gray)
+        g.ellipse(3, 11, 11, 6, gray, outline=False)
+        g.c.drawPath(smooth([(-11, 5), (0, 13), (13, 9)], close=False), g.stroke(OUTLINE, g.lw()))
+        g.shape(poly([(4, -21), (10, -15), (4, -9), (-2, -15)]), GOLD)    # gold forehead ornament
+        g.circle(4, -15, 1.8, "#9e2a2a", outline=False)
+        self._animal_eye(g, 7, -3, 3.3, st, iris=s["eye"])
+        self._animal_eye(g, 15, -3.2, 2.5, st, iris=s["eye"])
+        self._animal_mouth(g, 11, 11.5, 3.2, st, tongue=True)
+        g.c.drawOval(skia.Rect.MakeLTRB(1, 4, 8, 8), skia.Paint(AntiAlias=True, Color=rgb("#e98a9a", 90)))
+        g.c.restore()
 
     def draw_sash(self, g, J, st):
         """a red waist sash tied at the front with two tails that sway in the breeze."""
@@ -955,7 +1245,28 @@ class Rig:
                 a = k * 2 * math.pi / 5 - 0.3
                 g.circle(fx + math.cos(a) * r * 0.13, fy + math.sin(a) * r * 0.13, r * 0.12, "#fbf7ee")
             g.circle(fx, fy, r * 0.07, "#f2c53d", outline=False)
+        if "headwrap_krama" in s["extras"]:
+            self.draw_headwrap(g, r, st)
         self.draw_brows(g, r, ex, st)
+        if "crown_gold" in s["extras"]:
+            tiers = poly([(-r * 0.78, -r * 0.95), (-r * 0.5, -r * 1.5), (-r * 0.2, -r * 1.35), (0.0, -r * 2.3),
+                          (r * 0.2, -r * 1.35), (r * 0.5, -r * 1.5), (r * 0.78, -r * 0.98)])
+            g.shape(tiers, GOLD)
+            for k in range(3):
+                yy = -r * (1.25 + k * 0.28)
+                g.line([(-r * (0.45 - k * 0.12), yy), (r * (0.45 - k * 0.12), yy)], color=shade(GOLD, 0.3), w=g.lw() * 0.7)
+            base = smooth([(-r * 0.95, -r * 0.62), (0, -r * 0.9), (r * 0.95, -r * 0.66), (r * 0.9, -r * 0.92),
+                           (0, -r * 1.12), (-r * 0.9, -r * 0.9)], tension=0.35)
+            g.shape(base, light(GOLD, 0.12))
+            g.circle(0, -r * 0.9, r * 0.1, "#9e2a2a")
+        if "tiara_gold" in s["extras"]:
+            g.shape(poly([(-r * 0.7, -r * 0.88), (-r * 0.45, -r * 1.22), (-r * 0.2, -r * 1.02), (0.05, -r * 1.48),
+                          (r * 0.3, -r * 1.02), (r * 0.52, -r * 1.2), (r * 0.72, -r * 0.84), (0.0, -r * 1.0)]), GOLD)
+            g.circle(r * 0.05, -r * 1.1, r * 0.07, "#9e2a2a", outline=False)
+        if "earrings_drop" in s["extras"]:
+            g.circle(-r * 0.46, r * 0.38, r * 0.06, GOLD)
+            g.shape(poly([(-r * 0.46, r * 0.42), (-r * 0.38, r * 0.62), (-r * 0.46, r * 0.72), (-r * 0.54, r * 0.62)]), GOLD,
+                    olw=g.lw() * 0.6)
         if "headband_red" in s["extras"]:
             band = smooth([(-r * 0.98, -r * 0.35), (0, -r * 0.62), (r * 0.96, -r * 0.42), (r * 0.94, -r * 0.24),
                            (0, -r * 0.44), (-r * 0.98, -r * 0.16)], tension=0.4)
@@ -990,6 +1301,31 @@ class Rig:
         if "scar" in s["extras"]:
             g.line([(r * 0.72, r * 0.1), (r * 0.9, r * 0.36)], color=shade(s["skin"], 0.35), w=g.lw() * 0.9)
         c.restore()
+
+    def draw_headwrap(self, g, r, st):
+        """a checked krama tied round the head, knot and short tail at the back."""
+        s = self.s
+        c1, c2 = s["krama"]
+        wrap = smooth([(-r * 1.02, -r * 0.2), (-r * 0.9, -r * 0.88), (-r * 0.2, -r * 1.2), (r * 0.6, -r * 1.05),
+                       (r * 0.98, -r * 0.55), (r * 0.8, -r * 0.5), (r * 0.2, -r * 0.62), (-r * 0.45, -r * 0.45),
+                       (-r * 0.8, -r * 0.05)], tension=0.45)
+        tail = poly([(-r * 0.95, -r * 0.45), (-r * 1.35, -r * 0.1 + math.sin(st.get("t", 0) * 2) * r * 0.05),
+                     (-r * 1.3, r * 0.35), (-r * 1.0, r * 0.05)])
+        c = g.c
+        for pth in (tail, wrap):
+            c.drawPath(pth, g.fill(c1))
+            c.save(); c.clipPath(pth, skia.ClipOp.kIntersect, True)
+            bb = pth.getBounds()
+            step = r * 0.2
+            yy = bb.top()
+            while yy < bb.bottom():
+                g.line([(bb.left(), yy), (bb.right(), yy)], color=c2, w=r * 0.07, alpha=200); yy += step
+            xx = bb.left()
+            while xx < bb.right():
+                g.line([(xx, bb.top()), (xx, bb.bottom())], color=c2, w=r * 0.07, alpha=200); xx += step
+            c.restore()
+            c.drawPath(pth, g.stroke(OUTLINE, g.lw()))
+        g.circle(-r * 0.95, -r * 0.4, r * 0.17, shade(c1, 0.1))
 
     def draw_eyes(self, g, r, ex, st):
         s = self.s
@@ -1113,6 +1449,18 @@ class Rig:
             g.line([(r * 0.5, r * 1.0), (r * 0.48, r * 1.8)], color="#cfc9bf", w=g.lw() * 0.7)
             g.shape(smooth([(r * 0.28, r * 0.52), (r * 0.62, r * 0.4), (r * 0.96, r * 0.5), (r * 0.9, r * 0.6),
                             (r * 0.62, r * 0.54), (r * 0.32, r * 0.62)], tension=0.4), "#f7f5f0")
+        elif f == "beard_full":      # short black beard round the jaw + moustache (king)
+            col = self.s.get("beard", self.s["hair"])
+            g.shape(smooth([(-r * 0.35, r * 0.2), (-r * 0.1, r * 0.72), (r * 0.25, r * 1.18), (r * 0.62, r * 1.22),
+                            (r * 0.92, r * 0.85), (r * 0.9, r * 0.66), (r * 0.62, r * 0.82), (r * 0.3, r * 0.82),
+                            (r * 0.05, r * 0.55), (-r * 0.2, r * 0.15)], tension=0.45), col)
+            g.shape(smooth([(r * 0.26, r * 0.5), (r * 0.62, r * 0.4), (r * 0.94, r * 0.5), (r * 0.9, r * 0.6),
+                            (r * 0.62, r * 0.52), (r * 0.3, r * 0.62)], tension=0.4), col)
+        elif f == "goatee":          # pointed goatee + thin moustache (villain)
+            col = self.s.get("beard", self.s["hair"])
+            g.shape(poly([(r * 0.36, r * 0.82), (r * 0.72, r * 0.8), (r * 0.52, r * 1.45)]), col)
+            g.shape(smooth([(r * 0.3, r * 0.52), (r * 0.62, r * 0.42), (r * 0.95, r * 0.5), (r * 1.05, r * 0.66),
+                            (r * 0.9, r * 0.56), (r * 0.62, r * 0.5), (r * 0.36, r * 0.58)], tension=0.4), col, outline=False)
         elif f in ("mustache", "mustache_thin"):
             th = 0.09 if f == "mustache" else 0.05
             pth = smooth([(r * 0.3, r * 0.5), (r * 0.62, r * (0.46 - th)), (r * 0.9, r * 0.5), (r * 0.82, r * 0.56),
@@ -1150,12 +1498,22 @@ class Rig:
             if hs == "bun_top":
                 g.circle(-r * 0.42, -r * 1.02, r * 0.4, col)
                 g.line([(-r * 0.72, -r * 0.8), (-r * 0.12, -r * 0.86)], color="#d4a93c", w=g.lw() * 1.8)
+            if hs == "topknot_black":
+                g.circle(-r * 0.2, -r * 1.2, r * 0.34, col)
+                g.line([(-r * 0.45, -r * 1.0), (r * 0.05, -r * 1.02)], color=GOLD, w=g.lw() * 1.4)
+            if hs == "long_straight":
+                g.shape(smooth([(-r * 0.4, -r * 0.6), (-r * 1.1, r * 0.1), (-r * 1.15, r * 2.4), (-r * 1.0, r * 4.4),
+                                (-r * 0.2, r * 4.6), (r * 0.1, r * 3.2), (-r * 0.2, r * 0.9)], tension=0.45), col)
+                g.line([(-r * 0.7, r * 1.0), (-r * 0.6, r * 4.0)], color=light(col, 0.18), w=g.lw() * 0.9)
+            if hs == "spiky_tied":
+                g.shape(poly([(-r * 0.2, -r * 0.9), (-r * 0.5, -r * 1.75), (-r * 0.55, -r * 1.25), (-r * 1.05, -r * 1.7),
+                              (-r * 0.85, -r * 1.1), (-r * 1.4, -r * 1.2), (-r * 0.9, -r * 0.7)]), col)
             if hs == "topknot_white":
                 g.shape(smooth([(-r * 0.5, -r * 0.5), (-r * 1.05, r * 0.1), (-r * 1.1, r * 1.3), (-r * 0.85, r * 1.9),
                                 (-r * 0.45, r * 1.5), (-r * 0.35, r * 0.5)], tension=0.45), col)
                 g.circle(-r * 0.15, -r * 1.18, r * 0.3, col)
                 g.line([(-r * 0.4, -r * 1.0), (r * 0.1, -r * 1.02)], color="#c9a44a", w=g.lw() * 1.6)
-            if hs in ("bun", "braids", "gray_bun", "long_back", "chignon_high", "bun_top", "topknot_white"):
+            if hs in TIED_HAIR:
                 g.shape(smooth([(-r * 1.02, -r * 0.1), (-r * 0.8, -r * 0.9), (0, -r * 1.13), (r * 0.8, -r * 0.85),
                                 (r * 0.6, -r * 0.3), (-r * 0.9, r * 0.45)]), col)
             return
@@ -1192,7 +1550,7 @@ class Rig:
                   (0.98, -0.72), (1.12, -0.5), (0.86, -0.46), (0.74, -0.2), (0.56, -0.44), (0.34, -0.2),
                   (0.2, -0.46), (-0.05, -0.28), (-0.2, -0.5), (-0.45, -0.3), (-0.58, -0.05), (-0.66, 0.1)]
             g.shape(smooth([(x * r, y * r) for x, y in P_], tension=0.34), col)
-        elif hs in ("bun", "gray_bun", "braids", "long_back", "chignon_high", "bun_top", "topknot_white"):
+        elif hs in TIED_HAIR:
             cap = smooth([(-r * 0.98, r * 0.12), (-r * 1.0, -r * 0.6), (-r * 0.45, -r * 1.12), (r * 0.4, -r * 1.1),
                           (r * 0.92, -r * 0.62), (r * 0.9, -r * 0.44), (r * 0.4, -r * 0.62), (-r * 0.1, -r * 0.66),
                           (-r * 0.45, -r * 0.35), (-r * 0.62, r * 0.1)], tension=0.45)
@@ -1201,7 +1559,7 @@ class Rig:
                 g.shape(smooth([(r * 0.1, -r * 0.7), (r * 0.9, -r * 0.62), (r * 0.9, -r * 0.35), (r * 0.5, -r * 0.4)],
                                tension=0.4), col)
             g.line([(-r * 0.6, -r * 0.8), (0, -r * 1.0), (r * 0.6, -r * 0.8)], color=hi, w=g.lw())
-        elif hs == "spiky":
+        elif hs in ("spiky", "spiky_tied"):
             pts = [(-r * 0.98, r * 0.05), (-r * 1.0, -r * 0.6)]
             for i in range(7):
                 a = math.pi * (1.05 - i / 6 * 0.95)

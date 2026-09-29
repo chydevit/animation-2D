@@ -75,3 +75,13 @@ A story folder may also contain:
     `MUSIC_DB` (default -14) and `DUCK` (default 0.72) set its level and how far it dips under dialogue.
 - In `project.py`, `CHAPTER_CARDS = False` hides the chapter cards.
 See `episodes/keep_growing_never_stop/story/` in the workspace for a film built this way (narrator-only, all inserts).
+
+## Ready-made cast: the Dara world
+`engine/cast_dara.py` holds 11 locked rigs (dara, malis, sokha, veasna, bopha, jayavuth, rotha, sophea, puppy,
+monkey, elephant). Register them from `story_chars.py` with `import cast_dara; cast_dara.register()`.
+Rig parts they added (usable by any spec): shirt styles `strapless`, `armor`; hair `topknot_black`, `long_straight`,
+`spiky_tied`; facial `beard_full`, `goatee`; extras `cape` (+ `cape_collar`, colour key `cape`), `crown_gold`,
+`tiara_gold`, `earrings_drop`, `shoulder_guards`, `chest_armor`, `chest_medallion`, `arm_guards`, `shin_guards`,
+`armbands_gold`, `bangles`, `bracelet_thread`, `gold_belt`, `front_panel`, `sword_hip`, `headwrap_krama`,
+`basket_hip`; spec key `skirt_stripes` (1 = one hem band). A spec with `animal="dog" | "monkey" | "elephant"` is
+drawn by the animal rig (walk, blink, open-mouth lip-sync, tail wag / trunk sway / ear flap).

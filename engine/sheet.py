@@ -31,11 +31,20 @@ def save(s, name):
 
 def lineup():
     names = list(CAST)
-    W, H = 150 + len(names) * 200, 1000
+    tallest = max(CAST[n]["H"] * (1.25 if "crown_gold" in CAST[n]["extras"] else 1.0) for n in names)
+    z = min(4.6, 820 / tallest)                     # everything fits, heights stay true to each other
+    def slot(n):
+        sp = CAST[n]
+        if sp.get("animal"):
+            return (sp["H"] * 1.15 + 20) * z                # animals are wider than they are tall
+        return max(90.0, sp["shoulder"] * 1.9 + 50) * z / 4.6 * 1.9
+    gaps = [slot(n) for n in names]
+    W, H = int(120 + sum(gaps)), 1000
     s, c = surface(W, H)
-    z = 4.6
-    for i, n in enumerate(names):
-        draw_char(c, n, 120 + i * 200, 900, z)
+    x = 60
+    for n, gw in zip(names, gaps):
+        draw_char(c, n, x + gw * 0.5, 930, z)
+        x += gw
     save(s, "00_lineup.png")
 
 def head_at(c, name, cx, cy, zoom, **kw):
