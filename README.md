@@ -3,12 +3,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/chydevit/animation-2D/releases/latest"><img alt="Download the film" src="https://img.shields.io/badge/%E2%96%B6%20Download%20the%20film-15%20min%20%C2%B7%201080p-c0392b?style=for-the-badge"></a>
   <a href="#-install-one-step"><img alt="Install" src="https://img.shields.io/badge/Install-one%20command-2d6a4f?style=for-the-badge"></a>
 </p>
 
 <p align="center">
-  <img alt="release" src="https://img.shields.io/github/v/release/chydevit/animation-2D?color=d4a93c">
   <img alt="language" src="https://img.shields.io/badge/language-%E1%9E%81%E1%9F%92%E1%9E%98%E1%9F%82%E1%9E%9A%20Khmer-8a2f28">
   <img alt="platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-555">
   <img alt="Claude Code skill" src="https://img.shields.io/badge/Claude%20Code-skill-d97757">
@@ -24,12 +22,10 @@
 
 ---
 
-## 🎬 Watch the example film
+## 🎬 The example film
 
 <p align="center">
-  <a href="https://github.com/chydevit/animation-2D/releases/latest">
-    <img src="docs/images/preview.gif" alt="Preview of the film" width="720">
-  </a>
+  <img src="docs/images/preview.gif" alt="Preview of the film" width="720">
 </p>
 
 <table align="center">
@@ -37,8 +33,7 @@
     <td align="center"><b>ព្រះអាទិត្យថ្មីរះលើផែនដីចាស់</b><br><i>A New Sun Rises Over the Old Land</i></td>
     <td>15 min 49 s · 12 chapters · 232 shots · 21 voices · Khmer + English subtitles<br>
         Adapted from a published summary of the novel by <b>សួន សុរិន្ទ</b> (Suon Sorin). Every frame, voice and note
-        was made with this repository.<br>
-        <a href="https://github.com/chydevit/animation-2D/releases/latest"><b>▶ Download the MP4 and subtitles (Releases)</b></a></td>
+        was made with this repository.</td>
   </tr>
 </table>
 
